@@ -6,20 +6,24 @@ import (
 )
 func main(){
 
-	mux := http.NewServerMux()
+	mux := http.NewServeMux()
+	
+	server := &http.Server{
+		Handler: corsMiddleware(mux),
+		Addr: ":8080",
+	}
 
 	mux.HandleFunc("GET /products", listProducts)
 	mux.HandleFunc("GET /products/{id}", getProduct)
-	mux.HandleFunc("POST /products", createProduct)
-	mux.HandleFunc("PUT /products/{id}", updateProduct)
-	mux.HandleFunc("DELETE /products/{id}", deleteProduct)
+	mux.HandleFunc("POST /products", adminMiddleware(createProduct))
+	mux.HandleFunc("PUT /products/{id}", adminMiddleware(updateProduct))
+	mux.HandleFunc("DELETE /products/{id}", adminMiddleware(deleteProduct))
+
+	mux.HandleFunc("POST /register", register)
+	mux.HandleFunc("POST /login", login)
 
 	log.Println("server running on port " + server.Addr)
-	
-	server := &http.Server(
-		Handler: mux,
-		Addr: "8080"
-	)
 
-	server.ListenAndServe(":8080", corsMiddleWare(mux))
+
+	log.Fatal(server.ListenAndServe())
 }

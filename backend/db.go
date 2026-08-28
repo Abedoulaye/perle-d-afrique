@@ -31,7 +31,7 @@ func init(){
 	config.ConnConfig.Port = uint16(port)
 	config.ConnConfig.Database = os.Getenv("DB_NAME")
 
-	pool, err := pgxpool.NewWithConfig(context.background(), config)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		log.Fatal(err)
 	}

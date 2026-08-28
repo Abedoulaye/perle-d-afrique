@@ -22,7 +22,7 @@ type Product struct {
 
 type Cart struct {
 	ID int `json:"id"`
-	UserID int `json:"user_id"`,
+	UserID int `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
