@@ -35,7 +35,7 @@ func register(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	err = db.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id", u.Email, string(hashedPassword)).Scan(&u.ID)
+	err = db.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, role", u.Email, string(hashedPassword)).Scan(&u.ID, &u.Role)
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505"{
@@ -64,7 +64,7 @@ func login(w http.ResponseWriter, r *http.Request){
 	}
 
 	var storedHash string
-	err := db.QueryRow(ctx, "SELECT id, email, password_hash FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash)
+	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
@@ -80,7 +80,7 @@ func login(w http.ResponseWriter, r *http.Request){
 		return
 	}
 	
-	token, err := generateToken(u.ID)
+	token, err := generateToken(u.ID, u.Role)
 	if err != nil {
 		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
 		return
@@ -94,11 +94,12 @@ func login(w http.ResponseWriter, r *http.Request){
 	})
 }
 
-func generateToken(userID int) (string, error) {
+func generateToken(userID int, role string) (string, error) {
 
     // Create claims
     claims := jwt.MapClaims{
         "user_id": userID,
+		"role": role,
         "exp":     time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
         "iat":     time.Now().Unix(),
     }
@@ -111,7 +112,7 @@ func generateToken(userID int) (string, error) {
     return token.SignedString([]byte(secretKey))
 }
 
-func validateToken(tokenString string) (int, error) {
+func validateToken(tokenString string) (int, string, error) {
 
     // Remove "Bearer " prefix if present
     if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
@@ -128,14 +129,15 @@ func validateToken(tokenString string) (int, error) {
     })
     
     if err != nil {
-        return 0, err
+        return 0, "", err
     }
     
     // Extract claims
     if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
         userID := int(claims["user_id"].(float64))
-        return userID, nil
+		role := claims["role"].(string)
+        return userID, role, nil
     }
     
-    return 0, fmt.Errorf("invalid token")
+    return 0, "", fmt.Errorf("invalid token")
 }

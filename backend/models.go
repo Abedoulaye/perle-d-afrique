@@ -1,3 +1,4 @@
+package main
 import "time"
 
 type User struct {
@@ -5,6 +6,7 @@ type User struct {
     Email    string `json:"email,omitempty"`
     Password string `json:"password,omitempty"` // omitempty so it's not returned in JSON
 	CreatedAt time.Time `json:"created_at"`
+	Role string `json:"role"`
 }
 
 /* a common programming pattern is known as "storing money as integers", floats have percision issues when in arithmetic situations due to how computers store them in binary. int64 over just int since int caps at about 2 billion or 21 million in this case after decimal points, 64 bits leave us in the quadrillions area.*/

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"content"
+	"context"
 	"log"
 	"os"
 	"strconv"
-	"github.com/jack/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 

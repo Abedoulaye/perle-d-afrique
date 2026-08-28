@@ -3,7 +3,7 @@ package main
 import (
 	"net/http"
 	"encoding/json"
-	"github.com/jackc/pgx5/v5"
+	"github.com/jackc/pgx/v5"
 	"context"
 	"time"
 	"errors"
