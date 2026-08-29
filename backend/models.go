@@ -48,3 +48,8 @@ type OrderItem struct {
 	Quantity int `json:"quantity"`
 	PriceInCentsAtPurchase int64 `json:"price_at_purchase"`
 }
+
+type CartDetail struct {
+	Item CartItem
+	Prod Product
+}
