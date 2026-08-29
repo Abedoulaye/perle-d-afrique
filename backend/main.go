@@ -22,6 +22,12 @@ func main(){
 	mux.HandleFunc("POST /register", register)
 	mux.HandleFunc("POST /login", login)
 
+	mux.HandleFunc("POST /cart", authMiddleware(addItem))
+	mux.HandleFunc("GET /cart", authMiddleware(viewCart))
+	mux.HandleFunc("PUT /cart", authMiddleware(updateQuantity))
+	mux.HandleFunc("DELETE /cart/{id}", authMiddleware(removeItem))
+	mux.HandleFunc("DELETE /cart", authMiddleware(clearCart))
+
 	log.Println("server running on port " + server.Addr)
 
 
