@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"time"
-	"github.com/jackc/pgx/v5"
 )
 
 func createOrder(w http.ResponseWriter, r *http.Request){

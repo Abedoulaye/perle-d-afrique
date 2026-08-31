@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"context"
 	"net/http"
 	"io"
 	"github.com/stripe/stripe-go/v81/webhook"

@@ -7,13 +7,14 @@ import (
 	"time"
 	"github.com/jackc/pgx/v5"
 	"strconv"
+	"errors"
 )
 
 
 func getOrCreateCart(ctx context.Context, userID int) (int, error) {
     var cartID int
     err := db.QueryRow(ctx, "SELECT id FROM carts WHERE user_id = $1", userID).Scan(&cartID)
-    if err == pgx.ErrNoRows {
+    if errors.Is(err, pgx.ErrNoRows) {
         err = db.QueryRow(ctx, "INSERT INTO carts (user_id) VALUES ($1) RETURNING id", userID).Scan(&cartID)
         if err != nil {
             return 0, err
@@ -53,7 +54,7 @@ func addItem(w http.ResponseWriter, r *http.Request){
 
 	var existingProductID int
 	err = db.QueryRow(ctx, "SELECT product_id FROM cart_items WHERE cart_id = $1 AND product_id = $2", cartID, input.ProductID).Scan(&existingProductID)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		_, err = db.Exec(ctx, "INSERT INTO cart_items (cart_id, product_id, quantity) VALUES($1, $2, $3)", cartID, input.ProductID, input.Quantity)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
