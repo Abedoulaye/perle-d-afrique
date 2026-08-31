@@ -30,6 +30,6 @@ func main(){
 
 	log.Println("server running on port " + server.Addr)
 
-
+	mux.HandleFunc("POST /webhook", handleWebhook)
 	log.Fatal(server.ListenAndServe())
 }
