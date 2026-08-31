@@ -28,8 +28,12 @@ func main(){
 	mux.HandleFunc("DELETE /cart/{id}", authMiddleware(removeItem))
 	mux.HandleFunc("DELETE /cart", authMiddleware(clearCart))
 
+	mux.HandleFunc("POST /orders", authMiddleware(createOrder))
+	mux.HandleFunc("GET /orders", authMiddleware(listOrders))
+	mux.HandleFunc("POST /create-payment-intent", authMiddleware(createPaymentIntent))
+	mux.HandleFunc("POST /webhook", handleWebhook)
+
 	log.Println("server running on port " + server.Addr)
 
-	mux.HandleFunc("POST /webhook", handleWebhook)
 	log.Fatal(server.ListenAndServe())
 }
