@@ -7,8 +7,8 @@ import (
     "os"
     "time"
     "github.com/jackc/pgx/v5"
-    "github.com/stripe/stripe-go/v81"
-    "github.com/stripe/stripe-go/v81/paymentintent"
+    "github.com/stripe/stripe-go/v85"
+    "github.com/stripe/stripe-go/v85/paymentintent"
     "errors"
     "strconv"
 )

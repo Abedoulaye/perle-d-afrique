@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"io"
-	"github.com/stripe/stripe-go/v81/webhook"
-	"github.com/stripe/stripe-go/v81"
+	"github.com/stripe/stripe-go/v85/webhook"
+	"github.com/stripe/stripe-go/v85"
 	"os"
+    "fmt"
 )
 
 func handleWebhook(w http.ResponseWriter, r* http.Request){
@@ -26,6 +27,8 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         os.Getenv("STRIPE_WEBHOOK_SECRET"),
     )
     if err != nil {
+        fmt.Println("Webhook error:", err)
+        fmt.Println("Secret starts with:", os.Getenv("STRIPE_WEBHOOK_SECRET")[:15])
         http.Error(w, "Invalid signature", http.StatusBadRequest)
         return
     }
