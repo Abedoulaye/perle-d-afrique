@@ -57,8 +57,11 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 	}
 	defer tx.Rollback(ctx) // If we return early, rollback everything
 
+	const taxRate = int64(5)
+	taxCents := totalPrice * taxRate / 100
+	finalTotal := totalPrice + taxCents
 	var orderID int
-	err = tx.QueryRow(ctx, "INSERT INTO orders (user_id, status, total_cents) VALUES ($1, $2, $3) RETURNING id", userID, "pending", totalPrice).Scan(&orderID)
+	err = tx.QueryRow(ctx, "INSERT INTO orders (user_id, status, total_cents) VALUES ($1, $2, $3) RETURNING id", userID, "pending", finalTotal).Scan(&orderID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return 
@@ -87,7 +90,7 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"order_id": orderID,
-		"total_cents": totalPrice,
+		"total_cents": finalTotal,
 		"status": "pending",
 		"items": items,
 	})
