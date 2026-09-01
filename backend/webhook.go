@@ -40,13 +40,15 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
             http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
             return
         }
-
+        fmt.Printf("Full PaymentIntent: %+v\n", paymentIntent)
+        fmt.Printf("Metadata: %+v\n", paymentIntent.Metadata)
         orderID := paymentIntent.Metadata["order_id"]
         
         // Update order status to paid
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'paid' WHERE id = $1", orderID)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
+            fmt.Println("Webhook error:", err, "for orderID:", orderID)
             return
         }
 
@@ -55,6 +57,7 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         err = db.QueryRow(r.Context(), "SELECT user_id FROM orders WHERE id = $1", orderID).Scan(&userID)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
+            fmt.Println("Webhook error:", err, "for orderID:", orderID)
             return
         }
 
@@ -62,6 +65,7 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         _, err = db.Exec(r.Context(), "DELETE FROM cart_items WHERE cart_id IN (SELECT id FROM carts WHERE user_id = $1)", userID)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
+            fmt.Println("Webhook error:", err, "for orderID:", orderID)
             return
         }
 
@@ -71,13 +75,15 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
             http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
             return
         }
-
+        fmt.Printf("Full PaymentIntent: %+v\n", paymentIntent)
+        fmt.Printf("Metadata: %+v\n", paymentIntent.Metadata)
         orderID := paymentIntent.Metadata["order_id"]
         
         // Update order status to failed
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'failed' WHERE id = $1", orderID)
         if err != nil {
             http.Error(w, err.Error(), http.StatusInternalServerError)
+            fmt.Println("Webhook error:", err, "for orderID:", orderID)
             return
         }
 
@@ -87,4 +93,5 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
     
     // Always return 200 OK to Stripe
     w.WriteHeader(http.StatusOK)
+    
 }
