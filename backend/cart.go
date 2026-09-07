@@ -31,12 +31,6 @@ func addItem(w http.ResponseWriter, r *http.Request){
 
 	userID := r.Context().Value(userIDKey).(int)
 	
-	cartID, err := getOrCreateCart(ctx, userID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	
 	var input struct {
 		ProductID int `json:"product_id"`
 		Quantity  int `json:"quantity"`
@@ -51,6 +45,11 @@ func addItem(w http.ResponseWriter, r *http.Request){
     return
 }
 
+	cartID, err := getOrCreateCart(ctx, userID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	var existingProductID int
 	err = db.QueryRow(ctx, "SELECT product_id FROM cart_items WHERE cart_id = $1 AND product_id = $2", cartID, input.ProductID).Scan(&existingProductID)
@@ -145,12 +144,15 @@ func updateQuantity(w http.ResponseWriter, r *http.Request){
     return
 	}
 
-	_, err = db.Exec(ctx, "UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND product_id = $3", updated.Quantity, cartID, updated.ProductID)
+	result, err := db.Exec(ctx, "UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND product_id = $3", updated.Quantity, cartID, updated.ProductID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	if result.RowsAffected() == 0{
+		http.Error(w, "item not found in cart", http.StatusNotFound)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updated)
 }

@@ -33,14 +33,20 @@ func createPaymentIntent(w http.ResponseWriter, r *http.Request) {
     }
 
     var totalCents int64
-    err := db.QueryRow(ctx, "SELECT total_cents FROM orders WHERE id = $1 AND user_id = $2", req.OrderID, userID).Scan(&totalCents) 
-    
+    var status string
+    err := db.QueryRow(ctx, "SELECT total_cents, status FROM orders WHERE id = $1 AND user_id = $2", req.OrderID, userID).Scan(&totalCents, &status)
+
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
             http.Error(w, "Order not found", http.StatusNotFound)
             return
-        } 
+        }
         http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    if status != "pending" {
+        http.Error(w, "order is not payable", http.StatusBadRequest)
         return
     }
     

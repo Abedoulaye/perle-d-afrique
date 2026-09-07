@@ -107,8 +107,8 @@ func generateToken(userID int, role string) (string, error) {
     // Create token
     token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
     
-    // Sign token with secret key (should be in your .env file)
-    secretKey := os.Getenv("JWT_SECRET")
+
+	secretKey := os.Getenv("JWT_SECRET")
     return token.SignedString([]byte(secretKey))
 }
 

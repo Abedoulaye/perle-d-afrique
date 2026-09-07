@@ -48,6 +48,11 @@ func createOrder(w http.ResponseWriter, r *http.Request){
     http.Error(w, "cart is empty", http.StatusBadRequest)
     return
 	}
+	
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 // the upcoming syntax is useful for grouping database operations into one, this way if they all succeed it results in a success but if a single fails the entire order has failed.
 
 	tx, err := db.Begin(ctx)
@@ -68,6 +73,17 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 	}
 
 	for _, item := range items {
+		var currentStock int
+		err = tx.QueryRow(ctx, "SELECT stock FROM products WHERE id = $1 FOR UPDATE", item.ProductID).Scan(&currentStock)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if currentStock < item.Quantity {
+			http.Error(w, "not enough stock for item", http.StatusBadRequest)
+			return
+		}
+
 		_, err = tx.Exec(ctx, "INSERT INTO order_items (order_id, product_id, quantity, price_cents_at_purchase) VALUES ($1, $2, $3, $4)", orderID, item.ProductID, item.Quantity, item.PriceInCentsAtPurchase)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -79,7 +95,6 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 			return
 		}
 	}
-
 // Everything succeeded, commit the transaction
 	if err := tx.Commit(ctx); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -107,8 +122,9 @@ func listOrders(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer rows.Close()
 
-	var orders []Order
+	orders := []Order{}
 	for rows.Next(){
 		var order Order
 		if err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.TotalInCents, &order.CreatedAt); err != nil {
@@ -116,6 +132,10 @@ func listOrders(w http.ResponseWriter, r *http.Request){
 			return
 		}
 		orders = append(orders, order)
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

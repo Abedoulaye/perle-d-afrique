@@ -27,8 +27,6 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         os.Getenv("STRIPE_WEBHOOK_SECRET"),
     )
     if err != nil {
-        fmt.Println("Webhook error:", err)
-        fmt.Println("Secret starts with:", os.Getenv("STRIPE_WEBHOOK_SECRET")[:15])
         http.Error(w, "Invalid signature", http.StatusBadRequest)
         return
     }
@@ -40,10 +38,12 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
             http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
             return
         }
-        fmt.Printf("Full PaymentIntent: %+v\n", paymentIntent)
-        fmt.Printf("Metadata: %+v\n", paymentIntent.Metadata)
         orderID := paymentIntent.Metadata["order_id"]
-        
+        if orderID == "" {
+            fmt.Println("Webhook recieved with missing order_id, skipping")
+            w.WriteHeader(http.StatusOK)
+            return
+        }
         // Update order status to paid
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'paid' WHERE id = $1", orderID)
         if err != nil {
@@ -75,10 +75,12 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
             http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
             return
         }
-        fmt.Printf("Full PaymentIntent: %+v\n", paymentIntent)
-        fmt.Printf("Metadata: %+v\n", paymentIntent.Metadata)
         orderID := paymentIntent.Metadata["order_id"]
-        
+        if orderID == "" {
+            fmt.Println("Webhook recieved with missing order_id, skipping")
+            w.WriteHeader(http.StatusOK)
+            return
+        }
         // Update order status to failed
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'failed' WHERE id = $1", orderID)
         if err != nil {
