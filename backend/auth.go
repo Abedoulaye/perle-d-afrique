@@ -23,7 +23,7 @@ func register(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
+		
 	if u.Email == "" || u.Password == "" {
 		http.Error(w, "Email and password are required", http.StatusBadRequest)
 		return
