@@ -7,7 +7,7 @@ function Navbar() {
   return (
     <nav className="navbar">
       <Link to="/" className="navbar-brand">
-        Perle d'Afrique
+        Diariata's Fabrics
       </Link>
 
       <div className="navbar-links">
