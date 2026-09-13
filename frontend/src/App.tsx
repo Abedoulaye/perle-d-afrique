@@ -8,13 +8,22 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
+import Hero from "./components/Hero";
 
 function App() {
   return (
     <>
       <Navbar />
       <Routes>
-        <Route path="/" element={<ProductList />} />
+        <Route
+          path="/"
+          element={
+            <>
+              <Hero />
+              <ProductList />
+            </>
+          }
+        />
         <Route path="/products/:id" element={<ProductDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
