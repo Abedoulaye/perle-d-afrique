@@ -20,11 +20,19 @@ export async function apiFetch(
     headers,
   });
 
+  if (response.status === 401) {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+    throw new Error("Session expired");
+  }
+
   if (!response.ok) {
     const error = await response.text();
     throw new Error(error || `Request failed with status ${response.status}`);
   }
 
   if (response.status === 204) return null;
+
   return response.json();
 }
