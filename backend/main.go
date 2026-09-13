@@ -21,7 +21,9 @@ func main(){
 
 	mux.HandleFunc("POST /register", register)
 	mux.HandleFunc("POST /login", login)
-
+	mux.HandleFunc("POST /refresh", refresh)
+	mux.HandleFunc("POST /logout", logout)
+	
 	mux.HandleFunc("POST /cart", authMiddleware(addItem))
 	mux.HandleFunc("GET /cart", authMiddleware(viewCart))
 	mux.HandleFunc("PUT /cart", authMiddleware(updateQuantity))
