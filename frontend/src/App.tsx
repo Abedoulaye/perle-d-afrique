@@ -9,6 +9,9 @@ import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
 import Admin from "./pages/Admin";
 import Hero from "./components/Hero";
+import StoreBenefits from "./components/StoreBenefits";
+import Footer from "./components/Footer";
+import FeaturedProducts from "./components/FeaturedProducts";
 
 function App() {
   return (
@@ -20,7 +23,18 @@ function App() {
           element={
             <>
               <Hero />
+              <FeaturedProducts />
+              <StoreBenefits />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/products"
+          element={
+            <>
               <ProductList />
+              <Footer />
             </>
           }
         />
