@@ -139,8 +139,9 @@ html {
 
 .product-card {
   text-decoration: none;
-  color: inherit;
-  border: 1px solid #e0e0e0;
+  color: #f5f0e8;
+  background-color: #171411;
+  border: 1px solid #30281d;
   border-radius: 8px;
   overflow: hidden;
   transition:
@@ -150,7 +151,7 @@ html {
 
 .product-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .product-image {
@@ -166,11 +167,12 @@ html {
 .product-info h3 {
   margin: 0 0 0.5rem 0;
   font-size: 1.1rem;
+  color: #f5f0e8;
 }
 
 .product-price {
   font-weight: bold;
-  color: #2e7d32;
+  color: #c99a45;
   font-size: 1.2rem;
   margin: 0;
 }
