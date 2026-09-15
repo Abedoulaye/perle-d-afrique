@@ -7,7 +7,7 @@ interface AuthContextType {
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>; // ← add Promise<void> here
   isAdmin: boolean;
 }
 
@@ -28,9 +28,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    localStorage.setItem("token", data.token);
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("refresh_token", data.refresh_token);
     localStorage.setItem("user", JSON.stringify(data.user));
-    setToken(data.token);
+    setToken(data.access_token);
     setUser(data.user);
   };
 
@@ -42,8 +43,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await login(email, password);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      try {
+        await apiFetch("/logout", {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+      } catch {
+        // Ignore errors, just clear local state
+      }
+    }
     localStorage.removeItem("token");
+    localStorage.removeItem("refresh_token");
     localStorage.removeItem("user");
     setToken(null);
     setUser(null);

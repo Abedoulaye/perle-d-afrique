@@ -83,12 +83,6 @@ func login(w http.ResponseWriter, r *http.Request){
 		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
 		return
 	}
-	
-	token, err := generateToken(u.ID, u.Role)
-	if err != nil {
-		http.Error(w, "Failed to generate token", http.StatusInternalServerError)
-		return
-	}
 
     accessToken, err := generateAccessToken(u.ID, u.Role)
     if err != nil {
@@ -118,24 +112,6 @@ func login(w http.ResponseWriter, r *http.Request){
         "access_token":  accessToken,
         "refresh_token": refreshToken,
     })
-}
-
-func generateToken(userID int, role string) (string, error) {
-
-    // Create claims
-    claims := jwt.MapClaims{
-        "user_id": userID,
-		"role": role,
-        "exp":     time.Now().Add(time.Hour * 24).Unix(), // Token expires in 24 hours
-        "iat":     time.Now().Unix(),
-    }
-    
-    // Create token
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-    
-
-	secretKey := os.Getenv("JWT_SECRET")
-    return token.SignedString([]byte(secretKey))
 }
 
 func validateToken(tokenString string) (int, string, error) {

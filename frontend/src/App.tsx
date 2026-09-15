@@ -16,12 +16,12 @@ import FeaturedProducts from "./components/FeaturedProducts";
 function App() {
   return (
     <>
-      <Navbar />
       <Routes>
         <Route
           path="/"
           element={
             <>
+              <Navbar />
               <Hero />
               <FeaturedProducts />
               <StoreBenefits />
@@ -38,13 +38,56 @@ function App() {
             </>
           }
         />
-        <Route path="/products/:id" element={<ProductDetail />} />
+        <Route
+          path="/products/:id"
+          element={
+            <>
+              <Navbar />
+              <ProductDetail />
+              <Footer />
+            </>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/cart" element={<Cart />} />
-        <Route path="/checkout" element={<Checkout />} />
-        <Route path="/orders" element={<Orders />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route
+          path="/cart"
+          element={
+            <>
+              <Navbar />
+              <Cart />
+            </>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <>
+              <Navbar />
+              <Checkout />
+            </>
+          }
+        />
+        <Route
+          path="/orders"
+          element={
+            <>
+              <Navbar />
+              <Orders />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <>
+              <Navbar />
+              <Admin />
+              <Footer />
+            </>
+          }
+        />
       </Routes>
     </>
   );

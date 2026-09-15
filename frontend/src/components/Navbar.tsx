@@ -1,9 +1,9 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
   const { user, isAdmin, logout } = useAuth();
-
+  const navigate = useNavigate();
   return (
     <nav className="navbar">
       <Link to="/" className="navbar-brand">
@@ -29,6 +29,11 @@ function Navbar() {
           type="search"
           placeholder="Search for clothing, fabrics, or categories"
           aria-label="Search for clothing, fabrics, or categories"
+          onKeyDown={(e) => {
+            if (e.key == "Enter") {
+              navigate("/products");
+            }
+          }}
         />
       </div>
 
