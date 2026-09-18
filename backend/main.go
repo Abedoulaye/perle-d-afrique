@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"log"
+	"time"
 )
 func main(){
 
@@ -13,26 +14,32 @@ func main(){
 		Addr: ":8080",
 	}
 
-	mux.HandleFunc("GET /products", listProducts)
-	mux.HandleFunc("GET /products/{id}", getProduct)
-	mux.HandleFunc("POST /products", adminMiddleware(createProduct))
-	mux.HandleFunc("PUT /products/{id}", adminMiddleware(updateProduct))
-	mux.HandleFunc("DELETE /products/{id}", adminMiddleware(deleteProduct))
+	generalLimit := rateLimit(100, time.Minute)
 
-	mux.HandleFunc("POST /register", register)
-	mux.HandleFunc("POST /login", login)
-	mux.HandleFunc("POST /refresh", refresh)
-	mux.HandleFunc("POST /logout", logout)
+	mux.HandleFunc("GET /products", generalLimit(listProducts))
+	mux.HandleFunc("GET /products/{id}", generalLimit(getProduct))
+	mux.HandleFunc("POST /products", generalLimit(adminMiddleware(createProduct)))
+	mux.HandleFunc("PUT /products/{id}", generalLimit(adminMiddleware(updateProduct)))
+	mux.HandleFunc("DELETE /products/{id}", generalLimit(adminMiddleware(deleteProduct)))
+
+	loginLimit := rateLimit(5, 15*time.Minute)
+	registerLimit := rateLimit(3, time.Hour)
+
+	mux.HandleFunc("POST /register", registerLimit(register))
+	mux.HandleFunc("POST /login", loginLimit(login))
+	mux.HandleFunc("POST /refresh", generalLimit(refresh))
+	mux.HandleFunc("POST /logout", generalLimit(logout))
 	
-	mux.HandleFunc("POST /cart", authMiddleware(addItem))
-	mux.HandleFunc("GET /cart", authMiddleware(viewCart))
-	mux.HandleFunc("PUT /cart", authMiddleware(updateQuantity))
-	mux.HandleFunc("DELETE /cart/{id}", authMiddleware(removeItem))
-	mux.HandleFunc("DELETE /cart", authMiddleware(clearCart))
+	mux.HandleFunc("POST /cart", generalLimit(authMiddleware(addItem)))
+	mux.HandleFunc("GET /cart", generalLimit(authMiddleware(viewCart)))
+	mux.HandleFunc("PUT /cart", generalLimit(authMiddleware(updateQuantity)))
+	mux.HandleFunc("DELETE /cart/{id}", generalLimit(authMiddleware(removeItem)))
+	mux.HandleFunc("DELETE /cart", generalLimit(authMiddleware(clearCart)))
 
-	mux.HandleFunc("POST /orders", authMiddleware(createOrder))
-	mux.HandleFunc("GET /orders", authMiddleware(listOrders))
-	mux.HandleFunc("POST /create-payment-intent", authMiddleware(createPaymentIntent))
+	mux.HandleFunc("POST /orders", generalLimit(authMiddleware(createOrder)))
+	mux.HandleFunc("GET /orders", generalLimit(authMiddleware(listOrders)))
+	mux.HandleFunc("POST /create-payment-intent", generalLimit(authMiddleware(createPaymentIntent)))
+
 	mux.HandleFunc("POST /webhook", handleWebhook)
 
 	log.Println("server running on port " + server.Addr)

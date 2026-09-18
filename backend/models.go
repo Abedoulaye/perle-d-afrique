@@ -1,5 +1,8 @@
 package main
-import "time"
+import (
+	"time"
+	"sync"
+)
 
 type User struct {
     ID       int    `json:"id"`
@@ -52,4 +55,14 @@ type OrderItem struct {
 type CartDetail struct {
 	Item CartItem
 	Prod Product
+}
+
+type rateLimiter struct {
+    mu       sync.Mutex // used to protect shared data from being accessed by multiple goroutines at the same time. if you  try to read/write the visitors map at the same time, you get a data race — which can crash your program or corrupt data. A mutex lets you say "only one goroutine at a time can touch this."
+    visitors map[string]*visitor // a map of ips and their count, the string key is the ip part
+}
+
+type visitor struct {
+    count    int
+    resetAt  time.Time
 }
