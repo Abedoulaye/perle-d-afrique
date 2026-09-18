@@ -16,6 +16,7 @@ import (
 	"encoding/base64"
 	"crypto/sha256"
 	"encoding/hex"
+    "strings"
 )
 
 func register(w http.ResponseWriter, r *http.Request){
@@ -27,11 +28,16 @@ func register(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-		
-	if u.Email == "" || u.Password == "" {
-		http.Error(w, "Email and password are required", http.StatusBadRequest)
-		return
-	}
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+
+    if err := validateEmail(u.Email); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+    if err := validatePassword(u.Password); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -66,6 +72,14 @@ func login(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+    
+    u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+
+    if u.Email == "" || u.Password == "" {
+        http.Error(w, "invalid email or password", http.StatusUnauthorized)
+        return
+    }
+
 
 	var storedHash string
 	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role)

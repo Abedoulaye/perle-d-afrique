@@ -7,6 +7,7 @@ import (
 	"context"
 	"time"
 	"errors"
+	"strings"
 )
 
 func listProducts(w http.ResponseWriter, r *http.Request){
@@ -71,6 +72,15 @@ func createProduct(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	prod.Name = strings.TrimSpace(prod.Name)
+	prod.Description = strings.TrimSpace(prod.Description)
+	prod.Image = strings.TrimSpace(prod.Image)
+
+	if errs := validateProduct(prod); len(errs) > 0 {
+		http.Error(w, strings.Join(errs, ","), http.StatusBadRequest)
+		return
+	}
+
 	err := db.QueryRow(ctx, "INSERT INTO products (name, description, price_cents, stock, image) VALUES($1, $2, $3, $4, $5) RETURNING id", prod.Name, prod.Description, prod.PriceInCents, prod.Stock, prod.Image).Scan(&prod.ID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -91,6 +101,15 @@ func updateProduct(w http.ResponseWriter, r *http.Request){
 	var updated Product
 	if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	updated.Name = strings.TrimSpace(updated.Name)
+	updated.Description = strings.TrimSpace(updated.Description)
+	updated.Image = strings.TrimSpace(updated.Image)
+
+	if errs := validateProduct(updated); len(errs) > 0 {
+		http.Error(w, strings.Join(errs, ","), http.StatusBadRequest)
 		return
 	}
 
