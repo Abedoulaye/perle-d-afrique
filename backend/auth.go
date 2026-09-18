@@ -45,6 +45,13 @@ func register(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+    token, err := generateRefreshToken()
+    if err != nil {
+        http.Error(w, err, "register token gen")
+        return
+    }
+    expires := time.Now().Add(24 * time.Hour)
+
 	err = db.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, role", u.Email, string(hashedPassword)).Scan(&u.ID, &u.Role)
 
 	if err != nil {
@@ -55,6 +62,10 @@ func register(w http.ResponseWriter, r *http.Request){
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+    if err := sendVerificationEmail(u.Email, token); err != nil {
+        log.Printf("failed to send verification email to %s: %v", u.Email, err)
+    }
 
 	u.Password = ""
 
@@ -82,7 +93,7 @@ func login(w http.ResponseWriter, r *http.Request){
 
 
 	var storedHash string
-	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role)
+	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role, email_verified FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role, u.EmailVerified)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
@@ -245,4 +256,86 @@ func logout(w http.ResponseWriter, r *http.Request) {
     }
 
     w.WriteHeader(http.StatusNoContent)
+}
+
+func verifyEmail(w http.ResponseWriter, r *http.Request){
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    var req struct {
+        Token string `json:"token"`
+    }
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    result, err := db.Exec(ctx `
+        UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE verification_token = $1 AND verification_expires > NOW()
+    `, hashToken(req.Token))
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    if result.RowsAffected() == 0 {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"message": "email verified"})
+}
+
+
+func resendVerification(w http.ResponseWriter, r *http.Request){
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    var req struct {
+        Email string `json:"email"`
+    }
+
+    if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    req.Email = strings.ToLower(strings.TrimSpace(req.Email))
+
+    var userID int
+    var verified bool
+    err := db.QueryRow(ctx, "SELECT id, email_verified FROM users WHERE email = $1", req.Email).Scan(%userID, &verified)
+    if err != nil {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+
+    if verified {
+        http.Error(w, err.Error(), http.StatusBadRequest)
+        return
+    }
+
+    token, err := generateRefreshToken()
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    expires := time.Now().Add(24 * time.Hour)
+
+    _, err := db.Exec(ctx, "UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3", hashToken(token), expires, userID)
+    if err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    if err := sendVerificationEmail(req.Email, token); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(map[string]string{"message": "verification email sent"})
+
 }

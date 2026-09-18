@@ -42,6 +42,9 @@ func main(){
 
 	mux.HandleFunc("POST /webhook", handleWebhook)
 
+	mux.HandleFunc("POST /verify-email", rateLimit(10, time.Hour)(verifyEmail))
+	mux.HandleFunc("POST /resend-verification", rateLimit(3, time.Hour)(resendVerification))
+
 	log.Println("server running on port " + server.Addr)
 
 
