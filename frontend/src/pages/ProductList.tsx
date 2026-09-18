@@ -5,10 +5,12 @@ import type { Product } from "../types";
 import { useAuth } from "../context/AuthContext";
 
 function ProductList() {
-  let [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { user, isAdmin, logout } = useAuth();
+  const [search, setSearch] = useState("");
+  const [visibleCount, setVisibleCount] = useState(100);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -24,6 +26,10 @@ function ProductList() {
     };
     fetchProducts();
   }, []);
+
+  const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(search.toLowerCase()),
+  );
 
   if (loading) return <div className="loading">Loading products...</div>;
   if (error) return <div className="error">{error}</div>;
@@ -55,9 +61,8 @@ function ProductList() {
             placeholder="Search for clothing, fabrics, or categories"
             aria-label="Search for clothing, fabrics, or categories"
             onChange={(e) => {
-              products = products.filter((product) =>
-                product.name.includes(e.target.value),
-              );
+              setSearch(e.target.value);
+              setVisibleCount(100);
             }}
           />
         </div>
@@ -134,7 +139,7 @@ function ProductList() {
         </div>
       </div>
       <div className="product-grid">
-        {products.map((product) => (
+        {filteredProducts.slice(0, visibleCount).map((product) => (
           <Link
             to={`/products/${product.id}`}
             key={product.id}
@@ -154,6 +159,12 @@ function ProductList() {
           </Link>
         ))}
       </div>
+
+      {visibleCount < filteredProducts.length && (
+        <button onClick={() => setVisibleCount((c) => c + 100)}>
+          Load more
+        </button>
+      )}
     </>
   );
 }
