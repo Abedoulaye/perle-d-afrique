@@ -16,7 +16,7 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
     
     payload, err := io.ReadAll(r.Body) // JSON data Stripe sent
     if err != nil {
-        http.Error(w, "Error reading request body", http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "error reading request body")
         return
     }
     
@@ -27,7 +27,7 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         os.Getenv("STRIPE_WEBHOOK_SECRET"),
     )
     if err != nil {
-        http.Error(w, "Invalid signature", http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid signature")
         return
     }
 
@@ -35,20 +35,19 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
     case "payment_intent.succeeded":
         var paymentIntent stripe.PaymentIntent
         if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil { // JSON.urmashall converts JSON bytes into Go struct, opposite of json.Marshal
-            http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
+            clientError(w, http.StatusBadRequest, "error parsing webhook JSON")
             return
         }
         orderID := paymentIntent.Metadata["order_id"]
         if orderID == "" {
-            fmt.Println("Webhook recieved with missing order_id, skipping")
+            fmt.Println("Webhook received with missing order_id, skipping")
             w.WriteHeader(http.StatusOK)
             return
         }
         // Update order status to paid
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'paid' WHERE id = $1", orderID)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            fmt.Println("Webhook error:", err, "for orderID:", orderID)
+            serverError(w, err, "webhook update order")
             return
         }
 
@@ -56,36 +55,33 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
         var userID int
         err = db.QueryRow(r.Context(), "SELECT user_id FROM orders WHERE id = $1", orderID).Scan(&userID)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            fmt.Println("Webhook error:", err, "for orderID:", orderID)
+            serverError(w, err, "webhook select user_id")
             return
         }
 
         // Delete cart items
         _, err = db.Exec(r.Context(), "DELETE FROM cart_items WHERE cart_id IN (SELECT id FROM carts WHERE user_id = $1)", userID)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            fmt.Println("Webhook error:", err, "for orderID:", orderID)
+            serverError(w, err, "webhook clear cart")
             return
         }
 
     case "payment_intent.payment_failed":
         var paymentIntent stripe.PaymentIntent
         if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
-            http.Error(w, "Error parsing webhook JSON", http.StatusBadRequest)
+            clientError(w, http.StatusBadRequest, "error parsing webhook JSON")
             return
         }
         orderID := paymentIntent.Metadata["order_id"]
         if orderID == "" {
-            fmt.Println("Webhook recieved with missing order_id, skipping")
+            fmt.Println("Webhook received with missing order_id, skipping")
             w.WriteHeader(http.StatusOK)
             return
         }
         // Update order status to failed
         _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'failed' WHERE id = $1", orderID)
         if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            fmt.Println("Webhook error:", err, "for orderID:", orderID)
+            serverError(w, err, "webhook update order")
             return
         }
 

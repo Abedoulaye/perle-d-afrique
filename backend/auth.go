@@ -26,29 +26,29 @@ func register(w http.ResponseWriter, r *http.Request){
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+        clientError(w, http.StatusBadRequest, "invalid request body")
+        return
 	}
 	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 
     if err := validateEmail(u.Email); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, err.Error())
         return
     }
     if err := validatePassword(u.Password); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, err.Error())
         return
     }
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "Failed to hash password", http.StatusInternalServerError)
-		return
+        serverError(w, err, "register bcrypt")
+        return
 	}
 
     token, err := generateRefreshToken()
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "register token gen")
         return
     }
     expires := time.Now().Add(24 * time.Hour)
@@ -57,11 +57,11 @@ func register(w http.ResponseWriter, r *http.Request){
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505"{
-			http.Error(w, "Email already exists", http.StatusConflict)
-			return
+            clientError(w, http.StatusConflict, "email already exists")
+            return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+        serverError(w, err, "register insert")
+        return
 	}
 
     if err := sendVerificationEmail(u.Email, token); err != nil {
@@ -81,14 +81,14 @@ func login(w http.ResponseWriter, r *http.Request){
 
 	var u User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+        clientError(w, http.StatusBadRequest, "invalid request body")
+        return
 	}
     
     u.Email = strings.ToLower(strings.TrimSpace(u.Email))
 
     if u.Email == "" || u.Password == "" {
-        http.Error(w, "invalid email or password", http.StatusUnauthorized)
+        clientError(w, http.StatusUnauthorized, "invalid email and password")
         return
     }
 
@@ -98,27 +98,27 @@ func login(w http.ResponseWriter, r *http.Request){
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
-			http.Error(w, "invalid email or password", http.StatusUnauthorized)
-			return
+            clientError(w, http.StatusUnauthorized, "invalid email or password")
+            return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+        serverError(w, err, "login select query")
+        return
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(storedHash), []byte(u.Password)); err != nil {
-		http.Error(w, "Invalid email or password", http.StatusUnauthorized)
-		return
+        clientError(w, http.StatusUnauthorized, "invalid email or password")
+        return
 	}
 
     accessToken, err := generateAccessToken(u.ID, u.Role)
     if err != nil {
-        http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+        serverError(w, err, "generate access token")
         return
     }
 
     refreshToken, err := generateRefreshToken()
     if err != nil {
-        http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
+        serverError(w, err, "generate refresh token")
         return
     }
 
@@ -127,7 +127,7 @@ func login(w http.ResponseWriter, r *http.Request){
         "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
         u.ID, hashToken(refreshToken), time.Now().Add(30*24*time.Hour))
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "insert into refresh token table")
         return
     }
 
@@ -202,7 +202,7 @@ func refresh(w http.ResponseWriter, r *http.Request) {
         RefreshToken string `json:"refresh_token"`
     }
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid request body")
         return
     }
 
@@ -218,17 +218,17 @@ func refresh(w http.ResponseWriter, r *http.Request) {
 
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
-            http.Error(w, "Invalid or expired refresh token", http.StatusUnauthorized)
+            clientError(w, http.StatusUnauthorized, "invalid or expired refresh token")
             return
         }
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+            serverError(w, err, "refresh select query")
         return
     }
 
     // Issue new access token
     accessToken, err := generateAccessToken(userID, role)
     if err != nil {
-        http.Error(w, "Failed to generate token", http.StatusInternalServerError)
+        serverError(w, err, "refresh generate access token")
         return
     }
 
@@ -246,13 +246,13 @@ func logout(w http.ResponseWriter, r *http.Request) {
         RefreshToken string `json:"refresh_token"`
     }
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid request body")
         return
     }
 
     _, err := db.Exec(ctx, "DELETE FROM refresh_tokens WHERE token_hash = $1", hashToken(req.RefreshToken))
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "logout delete token")
         return
     }
 
@@ -267,7 +267,7 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
         Token string `json:"token"`
     }
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid request body")
         return
     }
 
@@ -275,7 +275,7 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
         UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE verification_token = $1 AND verification_expires > NOW()
     `, hashToken(req.Token))
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "verifyEmail update")
         return
     }
 
@@ -293,7 +293,7 @@ func resendVerification(w http.ResponseWriter, r *http.Request){
     }
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid request body")
         return
     }
 
@@ -308,13 +308,13 @@ func resendVerification(w http.ResponseWriter, r *http.Request){
     }
 
     if verified {
-        http.Error(w, "email already verified", http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "email already verified")
         return
     }
 
     token, err := generateRefreshToken()
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "resendVerification token gen")
         return
     }
 
@@ -322,12 +322,12 @@ func resendVerification(w http.ResponseWriter, r *http.Request){
 
     _, err = db.Exec(ctx, "UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3", hashToken(token), expires, userID)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "resendVerification update")
         return
     }
 
     if err := sendVerificationEmail(req.Email, token); err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "resendVerification send email")
         return
     }
 

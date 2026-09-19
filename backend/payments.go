@@ -28,7 +28,7 @@ func createPaymentIntent(w http.ResponseWriter, r *http.Request) {
     }
 
     if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "invalid request body")
         return
     }
 
@@ -38,15 +38,15 @@ func createPaymentIntent(w http.ResponseWriter, r *http.Request) {
 
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
-            http.Error(w, "Order not found", http.StatusNotFound)
+            clientError(w, http.StatusNotFound, "order not found")
             return
         }
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "createPaymentIntent query order")
         return
     }
 
     if status != "pending" {
-        http.Error(w, "order is not payable", http.StatusBadRequest)
+        clientError(w, http.StatusBadRequest, "order is not payable")
         return
     }
     
@@ -61,7 +61,7 @@ func createPaymentIntent(w http.ResponseWriter, r *http.Request) {
 
     pi, err := paymentintent.New(params)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        serverError(w, err, "createPaymentIntent stripe create")
         return
     }
 

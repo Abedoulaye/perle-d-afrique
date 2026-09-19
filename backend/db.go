@@ -13,7 +13,7 @@ var db *pgxpool.Pool
 
 func init(){
 	if err := godotenv.Load(); err != nil {
-		log.Println("Error occurred loading the .env file: %v", err)
+		log.Fatalf("Error occurred loading the .env file: %v\n", err)
 	}
 
 	config, err := pgxpool.ParseConfig("")

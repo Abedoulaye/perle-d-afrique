@@ -16,7 +16,7 @@ func listProducts(w http.ResponseWriter, r *http.Request){
 
 	rows, err := db.Query(ctx, "SELECT * FROM products")
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "listProducts query")
 		return
 	}
 	defer rows.Close()
@@ -25,14 +25,14 @@ func listProducts(w http.ResponseWriter, r *http.Request){
 	for rows.Next(){
 		var prod Product
 		if err := rows.Scan(&prod.ID, &prod.Name, &prod.Description, &prod.PriceInCents, &prod.Stock, &prod.Image); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			serverError(w, err, "listProducts scan")
 			return
 		}
 		products = append(products, prod)
 	}
 
 	if err := rows.Err(); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "listProducts rows error")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -51,10 +51,10 @@ func getProduct(w http.ResponseWriter, r *http.Request){
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "product not found", http.StatusNotFound)
+			clientError(w, http.StatusNotFound, "product not found")
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "getProduct query")
 		return
 	}
 	
@@ -68,7 +68,7 @@ func createProduct(w http.ResponseWriter, r *http.Request){
 
 	var prod Product
 	if err := json.NewDecoder(r.Body).Decode(&prod); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		clientError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -77,13 +77,13 @@ func createProduct(w http.ResponseWriter, r *http.Request){
 	prod.Image = strings.TrimSpace(prod.Image)
 
 	if errs := validateProduct(prod); len(errs) > 0 {
-		http.Error(w, strings.Join(errs, ","), http.StatusBadRequest)
+		clientError(w, http.StatusBadRequest, strings.Join(errs, ", "))
 		return
 	}
 
 	err := db.QueryRow(ctx, "INSERT INTO products (name, description, price_cents, stock, image) VALUES($1, $2, $3, $4, $5) RETURNING id", prod.Name, prod.Description, prod.PriceInCents, prod.Stock, prod.Image).Scan(&prod.ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "createProduct insert")
 		return
 	}
 
@@ -100,7 +100,7 @@ func updateProduct(w http.ResponseWriter, r *http.Request){
 
 	var updated Product
 	if err := json.NewDecoder(r.Body).Decode(&updated); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		clientError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
@@ -109,21 +109,21 @@ func updateProduct(w http.ResponseWriter, r *http.Request){
 	updated.Image = strings.TrimSpace(updated.Image)
 
 	if errs := validateProduct(updated); len(errs) > 0 {
-		http.Error(w, strings.Join(errs, ","), http.StatusBadRequest)
+		clientError(w, http.StatusBadRequest, strings.Join(errs, ", "))
 		return
 	}
 
 	err := db.QueryRow(ctx, "UPDATE products SET name = $1, description = $2, price_cents = $3, stock = $4, image = $5 WHERE id = $6 RETURNING id", updated.Name, updated.Description, updated.PriceInCents, updated.Stock, updated.Image, id).Scan(&updated.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "product not found", http.StatusNotFound)
+			clientError(w, http.StatusNotFound, "product not found")
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "updateProduct update")
 		return
 	}
 
-	w.Header().Set("content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(updated)
 
 }
@@ -136,12 +136,12 @@ func deleteProduct(w http.ResponseWriter, r *http.Request){
 
 	result, err := db.Exec(ctx, "DELETE FROM products WHERE id = $1", id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		serverError(w, err, "deleteProduct delete query")
 		return
 	}
 
 	if result.RowsAffected() == 0{
-		http.Error(w, "product not found", http.StatusNotFound)
+		clientError(w, http.StatusNotFound, "product not found")
 		return
 	}
 	w.WriteHeader(http.StatusOK)

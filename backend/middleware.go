@@ -33,7 +33,7 @@ func authMiddleware(next http.HandlerFunc) http.HandlerFunc {
         // Validate token, get user_id
         userID, _, err := validateToken(token)
         if err != nil {
-            http.Error(w, "unauthorized", http.StatusUnauthorized)
+            clientError(w, http.StatusUnauthorized, "unauthorized")
             return
         }
         // Add userID to context so handlers can use it
@@ -47,7 +47,7 @@ func adminMiddleware(next http.HandlerFunc) http.HandlerFunc {
         token := r.Header.Get("Authorization")
         _, role, err := validateToken(token)
         if err != nil || role != "admin" {
-            http.Error(w, "forbidden", http.StatusForbidden)
+            clientError(w, http.StatusForbidden, "forbidden")
             return
         }
         next.ServeHTTP(w, r)
@@ -67,7 +67,7 @@ func rateLimit(limit int, window time.Duration) func(http.HandlerFunc) http.Hand
             ip := getIP(r)
             
             if !limiter.allow(ip, limit, window) {
-                http.Error(w, "Too many requests", http.StatusTooManyRequests)
+                clientError(w, http.StatusTooManyRequests, "too many requests")
                 return
             }
             
