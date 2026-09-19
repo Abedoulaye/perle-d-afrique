@@ -11,7 +11,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	Role string `json:"role"`
 	EmailVerified bool `json:"email_verified"`
-	VertificationToken string `json:"-"`
+	VerificationToken string `json:"-"`
 	VerificationExpires time.Time `json:"-"`
 	// the dashes are for things we never actually send to client
 }

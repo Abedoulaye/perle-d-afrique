@@ -17,6 +17,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
     "strings"
+    "log"
 )
 
 func register(w http.ResponseWriter, r *http.Request){
@@ -47,12 +48,12 @@ func register(w http.ResponseWriter, r *http.Request){
 
     token, err := generateRefreshToken()
     if err != nil {
-        http.Error(w, err, "register token gen")
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
     expires := time.Now().Add(24 * time.Hour)
 
-	err = db.QueryRow(ctx, "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, role", u.Email, string(hashedPassword)).Scan(&u.ID, &u.Role)
+	err = db.QueryRow(ctx, "INSERT INTO users (email, password_hash, verification_token, verification_expires) VALUES ($1, $2, $3, $4) RETURNING id, role, email_verified", u.Email, string(hashedPassword), hashToken(token), expires).Scan(&u.ID, &u.Role, &u.EmailVerified)
 
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505"{
@@ -93,7 +94,7 @@ func login(w http.ResponseWriter, r *http.Request){
 
 
 	var storedHash string
-	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role, email_verified FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role, u.EmailVerified)
+	err := db.QueryRow(ctx, "SELECT id, email, password_hash, role, email_verified FROM users WHERE email = $1", u.Email).Scan(&u.ID, &u.Email, &storedHash, &u.Role, &u.EmailVerified)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows){
@@ -270,7 +271,7 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    result, err := db.Exec(ctx `
+    result, err := db.Exec(ctx, `
         UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE verification_token = $1 AND verification_expires > NOW()
     `, hashToken(req.Token))
     if err != nil {
@@ -279,7 +280,7 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
     }
 
     if result.RowsAffected() == 0 {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        http.Error(w, "invalid or expired token", http.StatusBadRequest)
         return
     }
 
@@ -305,14 +306,14 @@ func resendVerification(w http.ResponseWriter, r *http.Request){
 
     var userID int
     var verified bool
-    err := db.QueryRow(ctx, "SELECT id, email_verified FROM users WHERE email = $1", req.Email).Scan(%userID, &verified)
+    err := db.QueryRow(ctx, "SELECT id, email_verified FROM users WHERE email = $1", req.Email).Scan(&userID, &verified)
     if err != nil {
         w.WriteHeader(http.StatusOK)
         return
     }
 
     if verified {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        http.Error(w, "email already verified", http.StatusBadRequest)
         return
     }
 
@@ -324,7 +325,7 @@ func resendVerification(w http.ResponseWriter, r *http.Request){
 
     expires := time.Now().Add(24 * time.Hour)
 
-    _, err := db.Exec(ctx, "UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3", hashToken(token), expires, userID)
+    _, err = db.Exec(ctx, "UPDATE users SET verification_token = $1, verification_expires = $2 WHERE id = $3", hashToken(token), expires, userID)
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return

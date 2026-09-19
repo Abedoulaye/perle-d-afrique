@@ -13,7 +13,7 @@ func sendVerificationEmail(toEmail, token string) error {
 	verifyURL := fmt.Sprintf("%s/verify?token=%s", os.Getenv("CORS_ORIGIN"), token)
 
 	params := &resend.SendEmailRequest {
-		From: "onboarding@resend.dev" // replace with domain later
+		From: "onboarding@resend.dev", // replace with domain later
 		To: []string{toEmail},
 		Subject: "Verify your email - Diariata's Fabrics",
 		Html: fmt.Sprintf(`

@@ -992,8 +992,6 @@ html {
   margin: 0 auto;
 }
 
-/* Brand */
-
 .footer-brand {
   display: flex;
   align-items: center;
@@ -1031,8 +1029,6 @@ html {
 
   margin: 3px 0 0;
 }
-
-/* Navigation */
 
 .footer-links {
   display: flex;
@@ -1089,8 +1085,6 @@ html {
   height: 15px;
   stroke-width: 1.7;
 }
-
-/* Copyright */
 
 .footer-bottom {
   text-align: center;
@@ -1173,4 +1167,21 @@ html {
 }
 body {
   background-color: #0d0b09;
+}
+
+/* VerifyEmail */
+.verify-container {
+  max-width: 500px;
+  margin: 4rem auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.verify-container h1 {
+  margin-bottom: 1.5rem;
+}
+
+.verify-container a {
+  color: #1a1a1a;
+  text-decoration: underline;
 }

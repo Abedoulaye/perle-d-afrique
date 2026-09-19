@@ -12,6 +12,7 @@ import Hero from "./components/Hero";
 import StoreBenefits from "./components/StoreBenefits";
 import Footer from "./components/Footer";
 import FeaturedProducts from "./components/FeaturedProducts";
+import VerifyEmail from "./pages/VerifyEmail";
 
 function App() {
   return (
@@ -88,6 +89,7 @@ function App() {
             </>
           }
         />
+        <Route path="/verify" element={<VerifyEmail />} />
       </Routes>
     </>
   );
