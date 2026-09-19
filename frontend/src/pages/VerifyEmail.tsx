@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router";
 import { apiFetch } from "../services/api";
 
@@ -8,8 +8,11 @@ function VerifyEmail() {
     "loading",
   );
   const [message, setMessage] = useState("");
+  const hasVerified = useRef(false);
 
   useEffect(() => {
+    if (hasVerified.current) return;
+    hasVerified.current = true;
     const token = searchParams.get("token");
 
     if (!token) {

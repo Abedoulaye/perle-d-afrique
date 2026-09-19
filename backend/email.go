@@ -21,7 +21,7 @@ func sendVerificationEmail(toEmail, token string) error {
 		<p>Click the link below to verify your email:</p>
 		<a href="%s">Verify Email </a>
 		<p>This link expires in 24 hours.</p>
-		`, verifyURL)
+		`, verifyURL),
 	}
 
 	_, err := client.Emails.Send(params)

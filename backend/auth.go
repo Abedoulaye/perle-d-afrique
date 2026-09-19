@@ -271,16 +271,11 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
         return
     }
 
-    result, err := db.Exec(ctx, `
+    _, err := db.Exec(ctx, `
         UPDATE users SET email_verified = TRUE, verification_token = NULL, verification_expires = NULL WHERE verification_token = $1 AND verification_expires > NOW()
     `, hashToken(req.Token))
     if err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
-        return
-    }
-
-    if result.RowsAffected() == 0 {
-        http.Error(w, "invalid or expired token", http.StatusBadRequest)
         return
     }
 
