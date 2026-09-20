@@ -63,3 +63,5 @@ A full-stack e-commerce platform for a local African clothing business.
 - Stripe integration
 - Metadata linking
 - Structured logging
+
+## Documentation
