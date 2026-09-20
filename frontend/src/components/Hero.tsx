@@ -1,22 +1,25 @@
 import { useState } from "react";
+import carousel1 from "../assets/carousel1.png";
+import carousel2 from "../assets/carousel2.png";
+import carousel3 from "../assets/carousel3.png";
 
 const slides = [
   {
-    image: "https://picsum.photos/1600/900?random=1",
+    image: carousel1,
     eyebrow: "TRADITION MEETS TIMELESS STYLE",
     title: "Beautiful Fabrics. Unique Styles.",
     description:
       "Explore our collection of authentic African, Middle Eastern, and global-inspired clothing and fabrics designed for confidence, culture, and you.",
   },
   {
-    image: "https://picsum.photos/1600/900?random=2",
+    image: carousel2,
     eyebrow: "STYLE WITH CULTURE",
     title: "Wear Something Beautiful.",
     description:
       "Discover distinctive clothing and fabrics that bring timeless traditions and modern style together.",
   },
   {
-    image: "https://picsum.photos/1600/900?random=3",
+    image: carousel3,
     eyebrow: "CULTURE IN EVERY THREAD",
     title: "Find Your Next Favorite.",
     description:
