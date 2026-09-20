@@ -13,6 +13,9 @@ import StoreBenefits from "./components/StoreBenefits";
 import Footer from "./components/Footer";
 import FeaturedProducts from "./components/FeaturedProducts";
 import VerifyEmail from "./pages/VerifyEmail";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
 
 function App() {
   return (
@@ -90,6 +93,33 @@ function App() {
           }
         />
         <Route path="/verify" element={<VerifyEmail />} />
+        <Route
+          path="/about"
+          element={
+            <>
+              <About />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/contact"
+          element={
+            <>
+              <Contact />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/faq"
+          element={
+            <>
+              <FAQ />
+              <Footer />
+            </>
+          }
+        />
       </Routes>
     </>
   );
