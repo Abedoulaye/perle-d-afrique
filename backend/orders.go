@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"time"
+	"strings"
 )
 
 func createOrder(w http.ResponseWriter, r *http.Request){
@@ -18,6 +19,27 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+
+	var req struct {
+	ShippingName      string `json:"shipping_name"`
+    ShippingAddress   string `json:"shipping_address"`
+    ShippingPhone     string `json:"shipping_phone"`
+	}
+
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		clientError(w, http.StatusBadRequest, "invalid request body")
+		return
+	}
+
+	req.ShippingName = strings.TrimSpace(req.ShippingName)
+	req.ShippingAddress = strings.TrimSpace(req.ShippingAddress)
+	req.ShippingPhone = strings.TrimSpace(req.ShippingPhone)
+	
+	if req.ShippingName == "" || req.ShippingAddress == "" || req.ShippingPhone == "" {
+        clientError(w, http.StatusBadRequest, "shipping information required for delivery")
+        return
+    }
 
 	rows, err := db.Query(ctx, "SELECT ci.product_id, ci.quantity, p.price_cents, p.stock FROM cart_items ci JOIN products p ON ci.product_id = p.id WHERE ci.cart_id = $1", cartID)
 	if err != nil {
@@ -66,7 +88,7 @@ func createOrder(w http.ResponseWriter, r *http.Request){
 	taxCents := totalPrice * taxRate / 100
 	finalTotal := totalPrice + taxCents
 	var orderID int
-	err = tx.QueryRow(ctx, "INSERT INTO orders (user_id, status, total_cents) VALUES ($1, $2, $3) RETURNING id", userID, "pending", finalTotal).Scan(&orderID)
+	err = tx.QueryRow(ctx, "INSERT INTO orders (user_id, status, total_cents, shipping_name, shipping_address, shipping_phone) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id", userID, "pending", finalTotal, req.ShippingName, req.ShippingAddress, req.ShippingPhone).Scan(&orderID)
 	if err != nil {
 		serverError(w, err, "createOrder insert order")
 		return 
@@ -117,7 +139,7 @@ func listOrders(w http.ResponseWriter, r *http.Request){
 	defer cancel()
 	userID := r.Context().Value(userIDKey).(int)
 
-	rows, err := db.Query(ctx, "SELECT * FROM orders WHERE user_id = $1 ORDER BY created_at DESC", userID)
+	rows, err := db.Query(ctx, "SELECT id, user_id, status, total_cents, created_at, shipping_name, shipping_address, shipping_phone FROM orders WHERE user_id = $1 ORDER BY created_at DESC", userID)
 	if err != nil {
 		serverError(w, err, "listOrders query")
 		return
@@ -127,7 +149,7 @@ func listOrders(w http.ResponseWriter, r *http.Request){
 	orders := []Order{}
 	for rows.Next(){
 		var order Order
-		if err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.TotalInCents, &order.CreatedAt); err != nil {
+		if err := rows.Scan(&order.ID, &order.UserID, &order.Status, &order.TotalInCents, &order.CreatedAt, &order.ShippingName, &order.ShippingAddress, &order.ShippingPhone); err != nil {
 			serverError(w, err, "listOrders scan")
 			return
 		}

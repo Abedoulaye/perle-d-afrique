@@ -9,22 +9,38 @@ const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 function Checkout() {
   const { token } = useAuth();
   const navigate = useNavigate();
+
+  const [shippingName, setShippingName] = useState("");
+  const [shippingAddress, setShippingAddress] = useState("");
+  const [shippingPhone, setShippingPhone] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [orderId, setOrderId] = useState<number | null>(null);
 
-  const createOrder = async () => {
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+    }
+  }, [token, navigate]);
+
+  const createOrder = async (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
     setError("");
+
     try {
       const order = await apiFetch("/orders", {
         method: "POST",
+        body: JSON.stringify({
+          shipping_name: shippingName,
+          shipping_address: shippingAddress,
+          shipping_phone: shippingPhone,
+        }),
       });
       setOrderId(order.order_id);
-      return order;
     } catch (err) {
       setError("Failed to create order. Is your cart empty?");
-      throw err;
     } finally {
       setLoading(false);
     }
@@ -40,19 +56,16 @@ function Checkout() {
     setError("");
 
     try {
-      // Create PaymentIntent
       const { client_secret } = await apiFetch("/create-payment-intent", {
         method: "POST",
         body: JSON.stringify({ order_id: orderId }),
       });
 
-      // Load Stripe
       const stripe = await stripePromise;
       if (!stripe) {
         throw new Error("Stripe failed to load");
       }
 
-      // Confirm payment with test card
       const { error: stripeError } = await stripe.confirmCardPayment(
         client_secret,
         {
@@ -86,16 +99,52 @@ function Checkout() {
       {error && <div className="error-message">{error}</div>}
 
       {!orderId ? (
-        <button
-          onClick={createOrder}
-          disabled={loading}
-          className="checkout-btn"
-        >
-          {loading ? "Creating order..." : "Create Order"}
-        </button>
+        <form onSubmit={createOrder} className="shipping-form">
+          <h2>Shipping Information</h2>
+
+          <div className="form-group">
+            <label htmlFor="shippingName">Full Name</label>
+            <input
+              id="shippingName"
+              type="text"
+              value={shippingName}
+              onChange={(e) => setShippingName(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="shippingAddress">Delivery Address</label>
+            <input
+              id="shippingAddress"
+              type="text"
+              value={shippingAddress}
+              onChange={(e) => setShippingAddress(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="shippingPhone">Phone Number</label>
+            <input
+              id="shippingPhone"
+              type="tel"
+              value={shippingPhone}
+              onChange={(e) => setShippingPhone(e.target.value)}
+              required
+            />
+          </div>
+
+          <button type="submit" disabled={loading} className="checkout-btn">
+            {loading ? "Creating order..." : "Continue to Payment"}
+          </button>
+        </form>
       ) : (
         <div className="checkout-payment">
           <p>Order #{orderId} created!</p>
+          <p className="shipping-summary">
+            Delivering to: {shippingName} — {shippingAddress}
+          </p>
           <button
             onClick={handlePayment}
             disabled={loading}
@@ -110,6 +159,7 @@ function Checkout() {
 }
 
 export default Checkout;
+
 /* Production ready verion
 
 import { useState, useEffect } from "react";

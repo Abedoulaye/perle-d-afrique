@@ -63,10 +63,20 @@ function Orders() {
                   {order.status}
                 </span>
               </div>
+
               <div className="order-details">
                 <p>Total: ${(order.total_cents / 100).toFixed(2)}</p>
                 <p>Placed: {formatDate(order.created_at)}</p>
               </div>
+
+              {order.shipping_name && (
+                <div className="order-shipping">
+                  <h4>Shipping To</h4>
+                  <p>{order.shipping_name}</p>
+                  <p>{order.shipping_address}</p>
+                  <p>{order.shipping_phone}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

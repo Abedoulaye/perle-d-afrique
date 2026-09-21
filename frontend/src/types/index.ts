@@ -31,6 +31,9 @@ export interface Order {
   status: string;
   total_cents: number;
   created_at: string;
+  shipping_name?: string;
+  shipping_address?: string;
+  shipping_phone?: string;
 }
 
 // Everything above this is from the go structs, as for this thing below it, its for pages/Cart.tsx

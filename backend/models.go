@@ -46,6 +46,9 @@ type Order struct {
 	Status string `json:"status"`
 	TotalInCents int64 `json:"total"`
 	CreatedAt time.Time `json:"created_at"`
+	ShippingName string `json:"shipping_name,omitempty"`
+	ShippingAddress   string    `json:"shipping_address,omitempty"`
+    ShippingPhone     string    `json:"shipping_phone,omitempty"`
 }
 
 type OrderItem struct {

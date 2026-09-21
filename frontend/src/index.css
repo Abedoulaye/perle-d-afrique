@@ -1902,3 +1902,52 @@ body {
     white-space: nowrap;
   }
 }
+
+/* New stuff for shipping */
+.shipping-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.shipping-form h2 {
+  margin-bottom: 0.5rem;
+}
+
+.shipping-form .form-group input {
+  width: 100%;
+}
+
+.checkout-payment {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: center;
+}
+
+.shipping-summary {
+  color: #666;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.order-shipping {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.order-shipping h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  color: #666;
+  letter-spacing: 0.05em;
+}
+
+.order-shipping p {
+  margin: 0.25rem 0;
+  color: #333;
+}
