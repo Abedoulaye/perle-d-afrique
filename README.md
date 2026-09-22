@@ -2,11 +2,11 @@
 
 A full-stack e-commerce platform for a local African clothing business.
 
-![Screenshot](./screenshot.png)
+![Screenshot](./frontend/src/assets/screenshot.png)
 
 ## Live Demo
 
-[perledafrique.com](https://perledafrique.com)
+[perledafrique.com](https://diariatas-fabrics.vercel.app/)
 
 ## Features
 
