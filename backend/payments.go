@@ -18,7 +18,7 @@ func init() {
 }
 
 func createPaymentIntent(w http.ResponseWriter, r *http.Request) {
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
     defer cancel()
 
 	userID := r.Context().Value(userIDKey).(int)

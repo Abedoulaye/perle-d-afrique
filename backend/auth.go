@@ -21,7 +21,7 @@ import (
 )
 
 func register(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	var u User
@@ -76,7 +76,7 @@ func register(w http.ResponseWriter, r *http.Request){
 }
 
 func login(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	var u User
@@ -195,7 +195,7 @@ func hashToken(token string) string {
 }
 
 func refresh(w http.ResponseWriter, r *http.Request) {
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
     defer cancel()
 
     var req struct {
@@ -239,7 +239,7 @@ func refresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
     defer cancel()
 
     var req struct {
@@ -260,7 +260,7 @@ func logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func verifyEmail(w http.ResponseWriter, r *http.Request){
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
     defer cancel()
 
     var req struct {
@@ -285,7 +285,7 @@ func verifyEmail(w http.ResponseWriter, r *http.Request){
 
 
 func resendVerification(w http.ResponseWriter, r *http.Request){
-    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
     defer cancel()
 
     var req struct {

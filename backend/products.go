@@ -11,7 +11,7 @@ import (
 )
 
 func listProducts(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	rows, err := db.Query(ctx, "SELECT * FROM products")
@@ -40,7 +40,7 @@ func listProducts(w http.ResponseWriter, r *http.Request){
 }
 
 func getProduct(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	id := r.PathValue("id")
@@ -63,7 +63,7 @@ func getProduct(w http.ResponseWriter, r *http.Request){
 }
 
 func createProduct(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	var prod Product
@@ -94,7 +94,7 @@ func createProduct(w http.ResponseWriter, r *http.Request){
 
 
 func updateProduct(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	id := r.PathValue("id")
 
@@ -129,7 +129,7 @@ func updateProduct(w http.ResponseWriter, r *http.Request){
 }
 
 func deleteProduct(w http.ResponseWriter, r *http.Request){
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 
 	id := r.PathValue("id")
