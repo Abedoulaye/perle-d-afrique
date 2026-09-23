@@ -78,8 +78,35 @@ func handleWebhook(w http.ResponseWriter, r* http.Request){
             w.WriteHeader(http.StatusOK)
             return
         }
+
+        // Restore stock since createOrder decrements stock
+        rows, err := db.Query(r.Context(), "SELECT product_id, quantity FROM order_items WHERE order_id = $1", orderID)
+        if err != nil {
+            serverError(w, err, "webhook fetch order items")
+            return
+        }
+        defer rows.Close()
+
+        for rows.Next(){
+            var productID, quantity int
+            if err := rows.Scan(&productID, &quantity); err != nil {
+                serverError(w, err, "webhook scan order item")
+                return
+            }
+        
+            _, err := db.Exec(r.Context(), "UPDATE products SET stock = stock + $1 WHERE id = $2", quantity, productID)
+            if err != nil {
+                serverError(w, err, "webhook restore stock")
+                return
+            }
+    }
+        if err := rows.Err(); err != nil {
+            serverError(w, err, "webhook rows error")
+            return
+        }
+
         // Update order status to failed
-        _, err := db.Exec(r.Context(), "UPDATE orders SET status = 'failed' WHERE id = $1", orderID)
+        _, err = db.Exec(r.Context(), "UPDATE orders SET status = 'failed' WHERE id = $1", orderID)
         if err != nil {
             serverError(w, err, "webhook update order")
             return
