@@ -88,25 +88,24 @@ func viewCart(w http.ResponseWriter, r *http.Request){
 	}
 	defer rows.Close()
 
-
-	var c CartItem
-	var p Product
-
 	items := []CartDetail{}
 	for rows.Next(){
-
-		if err := rows.Scan(&c.ID, &c.CartID, &c.ProductID, &c.Quantity, &p.Name, &p.PriceInCents, &p.Description, &p.Stock, &p.Image); err != nil {
+		var item CartDetail
+		if err := rows.Scan(
+			&item.ID,
+			&item.CartID,
+			&item.ProductID,
+			&item.Quantity,
+			&item.Name,
+			&item.PriceInCents,
+			&item.Description,
+			&item.Stock,
+			&item.Image,
+		); err != nil {
 			serverError(w, err, "viewCart scan")
 			return
 		}
-		
-		detail := CartDetail{
-			Item: c,
-			Prod: p,
-		}
-
-		items = append(items, detail)
-
+		items = append(items, item)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -115,7 +114,6 @@ func viewCart(w http.ResponseWriter, r *http.Request){
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
-
 }
 
 func updateQuantity(w http.ResponseWriter, r *http.Request){

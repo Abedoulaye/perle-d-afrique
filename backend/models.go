@@ -44,7 +44,7 @@ type Order struct {
 	ID int `json:"id"`
 	UserID int `json:"user_id"`
 	Status string `json:"status"`
-	TotalInCents int64 `json:"total"`
+	TotalInCents int64 `json:"total_cents"`
 	CreatedAt time.Time `json:"created_at"`
 	ShippingName string `json:"shipping_name,omitempty"`
 	ShippingAddress   string    `json:"shipping_address,omitempty"`
@@ -60,8 +60,15 @@ type OrderItem struct {
 }
 
 type CartDetail struct {
-	Item CartItem
-	Prod Product
+	ID           int    `json:"id"`
+	CartID       int    `json:"cart_id"`
+	ProductID    int    `json:"product_id"`
+	Quantity     int    `json:"quantity"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	PriceInCents int64  `json:"price_cents"`
+	Stock        int    `json:"stock"`
+	Image        string `json:"image"`
 }
 
 type rateLimiter struct {
