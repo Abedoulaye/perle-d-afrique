@@ -25,7 +25,7 @@ function ProductList() {
 
   if (loading) return <div className="loading">Loading products...</div>;
   if (error) return <div className="error">{error}</div>;
-  const featuredProducts = products.slice(0, 6);
+  const featuredProducts = products.slice(0, 5);
   return (
     <>
       <div className="products-header">
